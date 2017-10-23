@@ -10,6 +10,7 @@ import itertools
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
+from PIL import ImageOps
 
 import pygsheets
 import fpdf
@@ -137,9 +138,10 @@ def generate(dog_name, sex, birthdate, looks_like, things, unique, dog_pic):
         draw.text((82, 2780+i*70), line, (0,0,0), font=font4)
 
     pic = Image.open(dog_pic)
-    p = pic.resize((1656, int(1656*pic.height/pic.width)))
-    h = (p.height-1250)/2
-    q = p.crop((0, h, 1656, 1250+h))
+    #p = pic.resize((1656, int(1656*pic.height/pic.width)))
+    #h = (p.height-1250)/2
+    #q = p.crop((0, h, 1656, 1250+h))
+    q = ImageOps.fit(pic, (1656, 1250))
     img.paste(q, (79, 677))
 
     return img
