@@ -1,3 +1,4 @@
+import json
 import os
 from typing import (Iterator, Dict, List, Sequence, Any, Optional,
                     Tuple, Callable, DefaultDict, Mapping)
@@ -63,3 +64,21 @@ def get_animal(animal_id: str) -> Animal:
 
 def get_events(animal_id: str) -> Iterator[Events]:
     return get_from_shelterluv(f'animals/{animal_id}/events', 'events')
+
+def json_source():
+    with open('src.json') as f:
+        yield from json.load(f)
+
+class Shelterluv(object):
+
+    def __init__(self, source=None):
+        self.source = source
+        self.refresh()
+
+    def refresh(self):
+        full = list(self.source())
+        self.by_name = {dog['Name']: dog for dog in full}
+        self.by_location = {
+            (dog['CurrentLocation']['Tier3'], dog['CurrentLocation'].get('Tier4')): dog
+            for dog in full
+        }
