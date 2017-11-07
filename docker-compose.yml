@@ -10,8 +10,9 @@ services:
       - "1234:80"
       - "5234:443"
     environment:
-      PASSWORD:
-      SHEET:
-      FOLDER:
+      PASSWORD: foobar
+      SHEET: 1D_RWE-C_232qHsEj39hWk2WEN1elz2Qc_XqzKxWvwZo
+      FOLDER: 0B3qV0KkMXsKxbHRCVWhVT1NXcGc
       GOOGLE_CREDENTIALS: "/data/secret.json"
+    env_file: .env
     network_mode: "bridge"
