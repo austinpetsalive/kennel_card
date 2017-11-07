@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:17.10
 
 RUN apt-get update
 RUN apt-get install -y python-pip python3-pip python3-dev git
