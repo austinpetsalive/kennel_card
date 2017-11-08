@@ -2,6 +2,7 @@ import re
 import os
 import datetime
 import functools
+import itertools
 from collections import defaultdict
 
 import shelterluv
@@ -54,14 +55,15 @@ def format_total(dog_id: str) -> int:
     partial = total = 0
     for event in events:
         if event['Type'].startswith('Intake.'):
-            partial = int(event['Time'])
-        if event['Type'].startswith('Outcome.'):
-            total += int(event['Time']) - partial
+            total += partial
+            start = int(event['Time'])
             partial = 0
-    if partial != 0:
-        total += int(datetime.datetime.now().timestamp()) - partial
+        if event['Type'].startswith('Outcome.'):
+            partial = int(event['Time']) - start
+    if partial == 0:
+        partial = int(datetime.datetime.now().timestamp()) - start
+    total += partial
     return int(total/(60*60*24))
-
 
 def default(d):
     return defaultdict(lambda: defaultdict(lambda: ''), d)
@@ -86,11 +88,9 @@ class MMKL(object):
         self.sl = sl
         self.client = pygsheets.authorize(service_file=GOOGLE_CREDENTIALS)
         self.sheet = self.client.open_by_key(SHEET)
-        self.refresh()
+        #self.refresh()
 
     def refresh(self):
-#        self.sl.refresh()
-
         self.ws = self.sheet.worksheet_by_title('Experiments')
         self.ws_df = self.ws.get_as_df()
         self.ws_df.set_index(['Name'], drop=False, inplace=True)
@@ -169,8 +169,14 @@ class MMKL(object):
 
 
 
-source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
-#source = functools.partial(shelterluv.json_source)
+#source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
+
+def limited_source(src, limit=10):
+    def _f():
+        return itertools.islice(src(), limit)
+    return _f
+
+source = functools.partial(limited_source(shelterluv.json_source))
 mmkl = MMKL(shelterluv.Shelterluv(source))
 
 
