@@ -5,9 +5,12 @@ import functools
 import itertools
 from collections import defaultdict
 
+import requests
 import shelterluv
 import pygsheets
 import pandas
+from bs4 import BeautifulSoup
+
 
 SHEET = '1vBN4Z1IxXvdbYkOmJDSZ_h_iD3SSdDpgTxW704bSDJA' # testing
 #SHEET = '1huASrSqMFRqfSgVLpq06JJxxEIRDOMOR9T_R9Vx5vXU' # production
@@ -88,6 +91,26 @@ def fix_formulas(ws):
     ]
     ws.update_cells('G2:G', values)
 
+def dd_info(web_id):
+    print(f'Getting info for {web_id}')
+    r = requests.get(
+        'http://www.dogdiaries.dreamhosters.com/?page_id=55&'
+        f'dog_id={web_id}')
+    r.raise_for_status()
+    page = BeautifulSoup(r.text, 'html5lib')
+    t = page.find(string='dog score')
+    l = [x.text.split('-')[0].strip() for x in t.parent.parent.next_sibling.select('td')[:5]]
+    resp = {
+        'dog': int(l[0]),
+        'cat': int(l[1]),
+        'child': int(l[2]),
+        'home': int(l[3]),
+        'energy': l[4]
+    }
+    return resp
+
+def update_dd(web_id, dog, cat, child, home, energy):
+    print(f'Will update {web_id} with {dog}, {cat}, {child}, {home}, {energy}')
 
 class MMKL(object):
 
@@ -116,6 +139,7 @@ class MMKL(object):
 
     def get_info(self):
         for name, dog in self.sl.by_name.items():
+            dd = dd_info(dog['ID'])
             yield {
                 'name': name,
                 'breed': format_breed(dog['Breed']),
@@ -123,13 +147,16 @@ class MMKL(object):
                 'age_fraction': format_age(dog['Age']),
                 'size': dog['Size'],
                 'days_since_last_intake': format_intake(int(dog['LastIntakeUnixTime'])),
-                'days_total': format_total(dog['Internal-ID'])
+                'days_total': format_total(dog['Internal-ID']),
+                'dd_info': dd,
+                'web_id': dog['ID']
             }
 
     def process(self):
         all_rows = {}
         for it in self.get_info():
             name = it['name']
+            dd = it['dd_info']
             new = {}
             new['Name'] = name
             new_notes = self.ws_dict[name]['Notes']
@@ -150,12 +177,20 @@ class MMKL(object):
             new_home = self.ws_dict[name]['Home']
             if not new_home:
                 new_home = self.orig_dict[name]['Home']
+            toy = self.ws_dict[name]['Toy preference']
+            new_energy = self.ws_dict[name]['Energy level']
+            if not toy:
+                toy = self.orig_dict[name]['Toy Preference']
+            home_notes = self.ws_dict[name]['Has home notes (y/n)']
+            if not home_notes:
+                home_notes = self.orig_dict[name]['Has Home Notes (Y/N)']
             new['Category'] = new_category
             new['Dog'] = new_dog
             new['Child'] = new_child
             new['Cat'] = new_cat
             new['Home'] = new_home
             new['Dog+Child'] = 0
+            new['Energy level'] = new_energy 
             new['Notes'] = new_notes
             new['Days since last intake'] = it['days_since_last_intake']
             new['Total days at shelter'] = it['days_total']
@@ -163,13 +198,23 @@ class MMKL(object):
             new['Age'] = it['age_fraction']
             new['Breed'] = it['breed']
             new['Gender'] = it['gender']
-            new['Scores match DD?'] = ''
-            new['Toy preference'] = ''
-            new['Has home notes (y/n)'] = ''
+            if self.ws_dict[name]['Scores match DD?'] == 'do update':
+                print(f'Update {name} with dog: {new_dog}')
+                update_dd(it['web_id'], new_dog, new_cat, new_child, new_home, new_energy)
+                new['Scores match DD?'] = 'up to date'
+            elif all([dd['dog'] == new_dog, dd['cat'] == new_cat,
+                      dd['child'] == new_child, dd['home'] == new_home,
+                      dd['energy'] == new_energy]):
+                new['Scores match DD?'] = 'up to date'
+            else:
+                new['Scores match DD?'] = 'mismatch'
+            new['Toy preference'] = toy 
+            new['Has home notes (y/n)'] = home_notes 
             all_rows[name] = new
         return all_rows
 
     def sync(self):
+        clear(self.ws)
         df = pandas.DataFrame.from_dict(self.process(), orient='index')
         self.ws.set_dataframe(df, start=(1, 1))
         fix_formulas(self.ws)
