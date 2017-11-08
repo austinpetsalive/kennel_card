@@ -52,17 +52,24 @@ def format_total(dog_id: str) -> int:
     else:
         events = list(shelterluv.get_events(dog_id))
     events.sort(key=lambda x: int(x['Time']))
-    partial = total = 0
+    total = 0
+
+    state = 'START'
     for event in events:
-        if event['Type'].startswith('Intake.'):
-            total += partial
-            start = int(event['Time'])
-            partial = 0
-        if event['Type'].startswith('Outcome.'):
-            partial = int(event['Time']) - start
-    if partial == 0:
-        partial = int(datetime.datetime.now().timestamp()) - start
-    total += partial
+        if state == 'START':
+            if event['Type'].startswith('Intake.'):
+                start_time = int(event['Time'])
+                state = 'IN'
+        elif state == 'IN':
+            if event['Type'].startswith('Outcome.Adopt'):
+                total += int(event['Time']) - start_time
+                state = 'OUT'
+        elif state == 'OUT':
+            if event['Type'].startswith('Intake.'):
+                start_time = int(event['Time'])
+                state = 'IN'
+    if state == 'IN':
+        total += int(datetime.datetime.now().timestamp()) - start_time
     return int(total/(60*60*24))
 
 def default(d):
