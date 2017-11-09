@@ -100,11 +100,15 @@ def dd_info(web_id):
     page = BeautifulSoup(r.text, 'html5lib')
     t = page.find(string='dog score')
     l = [x.text.split('-')[0].strip() for x in t.parent.parent.next_sibling.select('td')[:5]]
+    def convert(x):
+        if x == 'U':
+            return 0
+        return int(x)
     resp = {
-        'dog': int(l[0]),
-        'cat': int(l[1]),
-        'child': int(l[2]),
-        'home': int(l[3]),
+        'dog': convert(l[0]),
+        'cat': convert(l[1]),
+        'child': convert(l[2]),
+        'home': convert(l[3]),
         'energy': l[4]
     }
     return resp
@@ -126,10 +130,10 @@ class MMKL(object):
         self.ws_df.set_index(['Name'], drop=False, inplace=True)
         self.ws_dict = default(self.ws_df.to_dict('index'))
 
-        self.archive = self.sheet.worksheet_by_title('Experiments [Archive]')
-        self.archive_df = self.archive.get_as_df()
-        self.archive_df.set_index(['Name'], drop=False, inplace=True)
-        self.archive_dict = default(self.ws_df.to_dict('index'))
+#        self.archive = self.sheet.worksheet_by_title('Experiments [Archive]')
+#        self.archive_df = self.archive.get_as_df()
+#        self.archive_df.set_index(['Name'], drop=False, inplace=True)
+#        self.archive_dict = default(self.ws_df.to_dict('index'))
 
         self.orig = self.sheet.worksheet_by_title('MMKL')
         self.orig_df = self.orig.get_as_df()
@@ -223,14 +227,14 @@ class MMKL(object):
 
 
 
-#source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
+source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
 
 def limited_source(src, limit=10):
     def _f():
         return itertools.islice(src(), limit)
     return _f
 
-source = functools.partial(limited_source(shelterluv.json_source))
+#source = functools.partial(limited_source(shelterluv.json_source))
 mmkl = MMKL(shelterluv.Shelterluv(source))
 
 
