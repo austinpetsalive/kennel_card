@@ -178,12 +178,14 @@ class MMKL(object):
             if not new_home:
                 new_home = self.orig_dict[name]['Home']
             toy = self.ws_dict[name]['Toy preference']
-            new_energy = self.ws_dict[name]['Energy level']
             if not toy:
                 toy = self.orig_dict[name]['Toy Preference']
             home_notes = self.ws_dict[name]['Has home notes (y/n)']
             if not home_notes:
                 home_notes = self.orig_dict[name]['Has Home Notes (Y/N)']
+            new_energy = self.ws_dict[name]['Energy level']
+            if not new_energy:
+                new_energy = dd['energy']
             new['Category'] = new_category
             new['Dog'] = new_dog
             new['Child'] = new_child
