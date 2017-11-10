@@ -100,6 +100,7 @@ def dd_info(web_id):
     page = BeautifulSoup(r.text, 'html5lib')
     t = page.find(string='dog score')
     l = [x.text.split('-')[0].strip() for x in t.parent.parent.next_sibling.select('td')[:5]]
+    beh_color = page.find(string='collar').parent.parent.next_sibling.select('td')[0].text.strip().lower()
     def convert(x):
         if x == 'U':
             return 0
@@ -109,7 +110,8 @@ def dd_info(web_id):
         'cat': convert(l[1]),
         'child': convert(l[2]),
         'home': convert(l[3]),
-        'energy': l[4]
+        'energy': l[4],
+        'collar': beh_color[0]
     }
     return resp
 
@@ -197,6 +199,7 @@ class MMKL(object):
             new['Home'] = new_home
             new['Dog+Child'] = 0
             new['Energy level'] = new_energy 
+            new['Collar'] = dd['collar']
             new['Notes'] = new_notes
             new['Days since last intake'] = it['days_since_last_intake']
             new['Total days at shelter'] = it['days_total']
@@ -227,14 +230,14 @@ class MMKL(object):
 
 
 
-source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
+#source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
 
 def limited_source(src, limit=10):
     def _f():
         return itertools.islice(src(), limit)
     return _f
 
-#source = functools.partial(limited_source(shelterluv.json_source))
+source = functools.partial(limited_source(shelterluv.json_source))
 mmkl = MMKL(shelterluv.Shelterluv(source))
 
 
