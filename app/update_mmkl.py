@@ -49,6 +49,23 @@ def format_intake(intake: int) -> int:
     return (datetime.datetime.now() - datetime.datetime.fromtimestamp(intake)).days
 
 
+def format_kennel(loc):
+    tier4 = loc.get('Tier4', '')
+    if tier4 == 'ISO':
+        return tier4 
+    try:
+        return tier4.split()[1]
+    except IndexError:
+        return ''
+
+
+def format_hw(attrs):
+    for d in attrs:
+        if d['AttributeName'] == 'Heartworm +':
+            return 'HW+'
+    return ''
+
+
 def format_total(dog_id: str) -> int:
     ### ACTIVATE
     #return 0
@@ -104,6 +121,10 @@ def dd_info(web_id):
     t = page.find(string='dog score')
     l = [x.text.split('-')[0].strip() for x in t.parent.parent.next_sibling.select('td')[:5]]
     beh_color = page.find(string='collar').parent.parent.next_sibling.select('td')[0].text.strip().lower()
+    try:
+        weight = page.find(string='weight').parent.parent.next_sibling.select('td')[0].text.split()[0]
+    except IndexError:
+        weight = ''
     def convert(x):
         if x == 'U':
             return 0
@@ -114,7 +135,8 @@ def dd_info(web_id):
         'child': convert(l[2]),
         'home': convert(l[3]),
         'energy': l[4],
-        'collar': beh_color[0]
+        'collar': beh_color[0],
+        'weight': weight
     }
     return resp
 
@@ -130,17 +152,18 @@ class MMKL(object):
         #self.refresh()
 
     def refresh(self):
-        self.ws = self.sheet.worksheet_by_title('Experiments')
+        self.ws = self.sheet.worksheet_by_title('MMKL')
         self.ws_df = self.ws.get_as_df()
         self.ws_df.set_index(['Name'], drop=False, inplace=True)
         self.ws_dict = default(self.ws_df.to_dict('index'))
 
-#        self.archive = self.sheet.worksheet_by_title('Experiments [Archive]')
-#        self.archive_df = self.archive.get_as_df()
-#        self.archive_df.set_index(['Name'], drop=False, inplace=True)
-#        self.archive_dict = default(self.ws_df.to_dict('index'))
 
-        self.orig = self.sheet.worksheet_by_title('MMKL')
+        self.archive = self.sheet.worksheet_by_title('Archive')
+        self.archive_df = self.archive.get_as_df()
+        self.archive_df.set_index(['Name'], drop=False, inplace=True)
+        self.archive_dict = default(self.archive_df.to_dict('index'))
+
+        self.orig = self.sheet.worksheet_by_title('MMKL (old)')
         self.orig_df = self.orig.get_as_df()
         fix_inplace(self.orig_df)
         self.orig_df.set_index(['_Name'], drop=False, inplace=True)
@@ -158,7 +181,9 @@ class MMKL(object):
                 'days_since_last_intake': format_intake(int(dog['LastIntakeUnixTime'])),
                 'days_total': format_total(dog['Internal-ID']),
                 'dd_info': dd,
-                'web_id': dog['ID']
+                'web_id': dog['ID'],
+                'kennel': format_kennel(dog['CurrentLocation']),
+                'hw': format_hw(dog['Attributes'])
             }
 
     def process(self):
@@ -195,6 +220,9 @@ class MMKL(object):
             new_energy = self.ws_dict[name]['Energy level']
             if not new_energy:
                 new_energy = dd['energy']
+            last_updated = self.ws_dict[name]['Notes/Scores last updated']
+            if not last_updated:
+                last_updated = self.orig_dict[name]['Date Entered']
             new['Category'] = new_category
             new['Dog'] = new_dog
             new['Child'] = new_child
@@ -203,13 +231,17 @@ class MMKL(object):
             new['Dog+Child'] = 0
             new['Energy level'] = new_energy 
             new['Collar'] = dd['collar']
+            new['Notes/Scores last updated'] = last_updated
             new['Notes'] = new_notes
             new['Days since last intake'] = it['days_since_last_intake']
             new['Total days at shelter'] = it['days_total']
             new['Size'] = it['size']
+            new['Weight'] = dd['weight']
             new['Age'] = it['age_fraction']
             new['Breed'] = it['breed']
             new['Gender'] = it['gender']
+            new['HW'] = it['hw']
+            new['Kennel'] = it['kennel']
             if self.ws_dict[name]['Scores match DD?'] == 'do update':
                 print(f'Update {name} with dog: {new_dog}')
                 update_dd(it['web_id'], new_dog, new_cat, new_child, new_home, new_energy)
@@ -226,16 +258,34 @@ class MMKL(object):
         return all_rows
 
     def sync(self):
+        all_rows = self.process()
+        df = pandas.DataFrame.from_dict(all_rows, orient='index')
         clear(self.ws)
-        df = pandas.DataFrame.from_dict(self.process(), orient='index')
         self.ws.set_dataframe(df, start=(1, 1))
         fix_formulas(self.ws)
+        self.archive_old(all_rows)
+
+    def archive_old(self, rows):
+        for name in self.ws_dict:
+            if not name:
+                continue
+            if name not in rows:
+                print(f'Will archive {name}')
+                self.archive_dict[name] = {}
+                self.archive_dict[name]['Name'] = self.ws_dict[name]['Name']
+                self.archive_dict[name]['Dog'] = self.ws_dict[name]['Dog']
+                self.archive_dict[name]['Child'] = self.ws_dict[name]['Child']
+                self.archive_dict[name]['Cat'] = self.ws_dict[name]['Cat']
+                self.archive_dict[name]['Home'] = self.ws_dict[name]['Home']
+                self.archive_dict[name]['Energy level'] = self.ws_dict[name]['Energy level']
+                self.archive_dict[name]['Notes'] = self.ws_dict[name]['Notes']
+        if not self.archive_dict:
+            return
+        df = pandas.DataFrame.from_dict(self.archive_dict, orient='index')
+        self.archive.set_dataframe(df, start=(1, 1))
 
 
-
-#source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
-
-def limited_source(src, limit=10):
+def limited_source(src, limit=3):
     def _f():
         return itertools.islice(src(), limit)
     return _f
