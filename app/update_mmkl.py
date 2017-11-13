@@ -11,9 +11,12 @@ import pygsheets
 import pandas
 from bs4 import BeautifulSoup
 
+TESTING = False
 
-SHEET = '1vBN4Z1IxXvdbYkOmJDSZ_h_iD3SSdDpgTxW704bSDJA' # testing
-#SHEET = '1huASrSqMFRqfSgVLpq06JJxxEIRDOMOR9T_R9Vx5vXU' # production
+if TESTING:
+    SHEET = '1vBN4Z1IxXvdbYkOmJDSZ_h_iD3SSdDpgTxW704bSDJA' # testing
+else:
+    SHEET = '1huASrSqMFRqfSgVLpq06JJxxEIRDOMOR9T_R9Vx5vXU' # production
 GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS', 'secret.json')
 MM_PASSWORD = os.environ.get('MM_PASSWORD', '')
 CC_PASSWORD = os.environ.get('CC_PASSWORD', '')
@@ -237,7 +240,11 @@ def limited_source(src, limit=10):
         return itertools.islice(src(), limit)
     return _f
 
-source = functools.partial(limited_source(shelterluv.json_source))
+if TESTING:
+    source = functools.partial(limited_source(shelterluv.json_source))
+else:
+    source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
+
 mmkl = MMKL(shelterluv.Shelterluv(source))
 
 
