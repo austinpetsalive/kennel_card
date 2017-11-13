@@ -125,6 +125,9 @@ def dd_info(web_id):
         weight = page.find(string='weight').parent.parent.next_sibling.select('td')[0].text.split()[0]
     except IndexError:
         weight = ''
+    pg = page.find(string='pg/w/no').parent.parent.next_sibling.select('td')[2].text
+    if pg == 'W' or pg =='W*' or pg == 'no':
+        pg = ''
     def convert(x):
         if x == 'U':
             return 0
@@ -136,7 +139,8 @@ def dd_info(web_id):
         'home': convert(l[3]),
         'energy': l[4],
         'collar': beh_color[0],
-        'weight': weight
+        'weight': weight,
+        'pg': pg
     }
     return resp
 
@@ -240,6 +244,7 @@ class MMKL(object):
             new['Age'] = it['age_fraction']
             new['Breed'] = it['breed']
             new['Gender'] = it['gender']
+            new['PG'] = dd['pg']
             new['HW'] = it['hw']
             new['Kennel'] = it['kennel']
             if self.ws_dict[name]['Scores match DD?'] == 'do update':
