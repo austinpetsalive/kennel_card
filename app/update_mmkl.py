@@ -50,14 +50,23 @@ def format_intake(intake: int) -> int:
 
 
 def format_kennel(loc):
+    tier3 = loc.get('Tier3', '')
     tier4 = loc.get('Tier4', '')
-    if tier4 == 'ISO':
-        return tier4 
-    try:
-        return tier4.split()[1]
-    except IndexError:
-        return ''
+    if tier3.startswith('Building') or tier3.startswith('AAC'):
+        try:
+            return tier4.split()[1]
+        except IndexError:
+            return '?'
+    return tier3
 
+def format_energy(energy):
+    d = {
+        'U': 'Unk',
+        'L': 'Low',
+        'M': 'Med',
+        'H': 'High'
+    }
+    return d.get(energy, '')
 
 def format_hw(attrs):
     for d in attrs:
