@@ -11,10 +11,10 @@ import pygsheets
 import pandas
 from bs4 import BeautifulSoup
 
-TESTING = False
+TESTING = True
 
 if TESTING:
-    SHEET = '1vBN4Z1IxXvdbYkOmJDSZ_h_iD3SSdDpgTxW704bSDJA' # testing
+    SHEET = '1HJcSEDLYDiq6fgWJn3FsNpy407WUnjBTixxf5naE4Ic' # testing
 else:
     SHEET = '1huASrSqMFRqfSgVLpq06JJxxEIRDOMOR9T_R9Vx5vXU' # production
 GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS', 'secret.json')
@@ -161,8 +161,7 @@ class MMKL(object):
         self.ws_df.set_index(['Name'], drop=False, inplace=True)
         self.ws_dict = default(self.ws_df.to_dict('index'))
 
-
-        self.archive = self.sheet.worksheet_by_title('Archive')
+        self.archive = self.sheet.worksheet_by_title('[Archive]')
         self.archive_df = self.archive.get_as_df()
         self.archive_df.set_index(['Name'], drop=False, inplace=True)
         self.archive_dict = default(self.archive_df.to_dict('index'))
@@ -191,42 +190,37 @@ class MMKL(object):
             }
 
     def process(self):
+
+        def update_col(name, ws_col_name, orig_col_name):
+            col = self.ws_dict[name][ws_col_name]
+            if not col:
+                try:
+                    col = self.archive_dict[name][ws_col_name]
+                except KeyError:
+                    col = self.orig_dict[name][orig_col_name]
+            return col
+
         all_rows = {}
         for it in self.get_info():
             name = it['name']
             dd = it['dd_info']
             new = {}
             new['Name'] = name
-            new_notes = self.ws_dict[name]['Notes']
-            if not new_notes:
-                new_notes = self.orig_dict[name]['Matchmaker Notes']
-            new_dog = self.ws_dict[name]['Dog']
-            if not new_dog:
-                new_dog = self.orig_dict[name]['Dog']
-            new_category = self.ws_dict[name]['Category']
-            if not new_category:
-                new_category = self.orig_dict[name]['_Category']
-            new_child = self.ws_dict[name]['Child']
-            if not new_child:
-                new_child = self.orig_dict[name]['Child']
-            new_cat = self.ws_dict[name]['Cat']
-            if not new_cat:
-                new_cat = self.orig_dict[name]['Cat']
-            new_home = self.ws_dict[name]['Home']
-            if not new_home:
-                new_home = self.orig_dict[name]['Home']
-            toy = self.ws_dict[name]['Toy preference']
-            if not toy:
-                toy = self.orig_dict[name]['Toy Preference']
-            home_notes = self.ws_dict[name]['Has home notes (y/n)']
-            if not home_notes:
-                home_notes = self.orig_dict[name]['Has Home Notes (Y/N)']
+
+            new_notes = update_col(name, 'Notes', 'Matchmaker Notes')
+            new_category = update_col(name, 'Category', '_Category')
+            new_dog = update_col(name, 'Dog', 'Dog') 
+            new_child = update_col(name, 'Child', 'Child')
+            new_cat = update_col(name, 'Cat', 'Cat')
+            new_home = update_col(name, 'Home', 'Home')
+            toy = update_col(name, 'Toy preference', 'Toy Preference')
+            home_notes = update_col(name, 'Has home notes (y/n)', 'Has Home Notes (Y/N)')
+            last_updated = update_col(name, 'Notes/Scores last updated', 'Date Entered')
+
             new_energy = self.ws_dict[name]['Energy level']
             if not new_energy:
                 new_energy = dd['energy']
-            last_updated = self.ws_dict[name]['Notes/Scores last updated']
-            if not last_updated:
-                last_updated = self.orig_dict[name]['Date Entered']
+
             new['Category'] = new_category
             new['Dog'] = new_dog
             new['Child'] = new_child
@@ -277,13 +271,7 @@ class MMKL(object):
             if name not in rows:
                 print(f'Will archive {name}')
                 self.archive_dict[name] = {}
-                self.archive_dict[name]['Name'] = self.ws_dict[name]['Name']
-                self.archive_dict[name]['Dog'] = self.ws_dict[name]['Dog']
-                self.archive_dict[name]['Child'] = self.ws_dict[name]['Child']
-                self.archive_dict[name]['Cat'] = self.ws_dict[name]['Cat']
-                self.archive_dict[name]['Home'] = self.ws_dict[name]['Home']
-                self.archive_dict[name]['Energy level'] = self.ws_dict[name]['Energy level']
-                self.archive_dict[name]['Notes'] = self.ws_dict[name]['Notes']
+                self.archive_dict[name] = self.ws_dict[name]
         if not self.archive_dict:
             return
         df = pandas.DataFrame.from_dict(self.archive_dict, orient='index')
