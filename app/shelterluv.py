@@ -47,7 +47,11 @@ def get_shelter_dogs(include_not_available=False) -> Iterator[Animal]:
             and (include_not_available or a['Status'] == 'Available In Shelter')
             and a.get('CurrentLocation')
             and a['CurrentLocation'].get('Tier2') == 'TLAC'
-            and a['CurrentLocation'].get('Tier3') != 'Barn')
+            and a['CurrentLocation'].get('Tier3') != 'Barn'
+            and not a['CurrentLocation'].get('Tier3').startswith('Medical')
+            and not a['CurrentLocation'].get('Tier3').startswith('Parvo')
+            and not a['CurrentLocation'].get('Tier3').startswith('Maternity')
+    )
 
 def get_shelter_dogs_test() -> Iterator[Animal]:
     yield from [
