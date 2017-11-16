@@ -243,6 +243,7 @@ class MMKL(object):
             new['Collar'] = dd['collar']
             new['Notes/Scores last updated'] = last_updated
             new['Notes'] = new_notes
+            new['Kennel'] = it['kennel']
             new['Days since last intake'] = it['days_since_last_intake']
             new['Total days at shelter'] = it['days_total']
             new['Size'] = it['size']
@@ -252,7 +253,6 @@ class MMKL(object):
             new['Gender'] = it['gender']
             new['PG'] = dd['pg']
             new['HW'] = it['hw']
-            new['Kennel'] = it['kennel']
             if self.ws_dict[name]['Scores match DD?'] == 'do update':
                 print(f'Update {name} with dog: {new_dog}')
                 update_dd(it['web_id'], new_dog, new_cat, new_child, new_home, new_energy)
