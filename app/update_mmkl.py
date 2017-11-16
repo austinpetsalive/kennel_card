@@ -11,7 +11,7 @@ import pygsheets
 import pandas
 from bs4 import BeautifulSoup
 
-TESTING = True
+TESTING = False
 
 if TESTING:
     SHEET = '1HJcSEDLYDiq6fgWJn3FsNpy407WUnjBTixxf5naE4Ic' # testing
@@ -300,6 +300,8 @@ if TESTING:
 else:
     source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
 
-mmkl = MMKL(shelterluv.Shelterluv(source))
+def get_mmkl():
+    mmkl = MMKL(shelterluv.Shelterluv(source))
+    return mmkl
 
 
