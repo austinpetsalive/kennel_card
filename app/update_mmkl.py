@@ -118,7 +118,8 @@ def clear(ws):
 def fix_formulas(ws):
     rows = ws.jsonSheet['properties']['gridProperties']['rowCount']
     values = [
-        [f'=IF(C{i}+D{i}>=6,C{i}+D{i},0)'] for i in range(2, rows)
+        [f'=IF( IF($C{i}=0,3,$C{i}) + IF($D{i}=0,3,$D{i}) > 6, IF($C{i}=0,3,$C{i})+IF($D{i}=0,3,$D{i}), 0 )']
+        for i in range(2, rows)
     ]
     ws.update_cells('G2:G', values)
 
