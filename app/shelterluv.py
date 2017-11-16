@@ -42,16 +42,23 @@ def get_all_animals() -> Iterator[Animal]:
     return get_from_shelterluv('animals', 'animals')
 
 def get_shelter_dogs(include_not_available=False) -> Iterator[Animal]:
-    return (a for a in get_all_animals()
-            if a['Type'] == 'Dog'
-            and (include_not_available or a['Status'] == 'Available In Shelter')
-            and a.get('CurrentLocation')
-            and a['CurrentLocation'].get('Tier2') == 'TLAC'
-            and a['CurrentLocation'].get('Tier3') != 'Barn'
-            and not a['CurrentLocation'].get('Tier3').startswith('Medical')
-            and not a['CurrentLocation'].get('Tier3').startswith('Parvo')
-            and not a['CurrentLocation'].get('Tier3').startswith('Maternity')
-    )
+    for a in get_all_animals():
+        if a['Type'] == 'Dog':
+            if a['Name'] == 'Kobu':
+                a['CurrentLocation'] = {
+                    'Tier3': '',
+                    'Tier4': ''
+                }
+                yield a
+                continue
+            if ((include_not_available or a['Status'] == 'Available In Shelter')
+                and a.get('CurrentLocation')
+                and a['CurrentLocation'].get('Tier2') == 'TLAC'
+                and a['CurrentLocation'].get('Tier3') != 'Barn'
+                and not a['CurrentLocation'].get('Tier3').startswith('Medical')
+                and not a['CurrentLocation'].get('Tier3').startswith('Parvo')
+                and not a['CurrentLocation'].get('Tier3').startswith('Maternity')):
+                yield a
 
 def get_shelter_dogs_test() -> Iterator[Animal]:
     yield from [
