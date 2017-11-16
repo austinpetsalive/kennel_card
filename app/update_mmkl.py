@@ -233,7 +233,7 @@ class MMKL(object):
 
             new_energy = self.ws_dict[name]['Energy level']
             if not new_energy:
-                new_energy = dd['energy']
+                new_energy = format_energy(dd['energy'])
 
             new['Category'] = new_category
             new['Dog'] = new_dog
@@ -241,7 +241,7 @@ class MMKL(object):
             new['Cat'] = new_cat
             new['Home'] = new_home
             new['Dog+Child'] = 0
-            new['Energy level'] = format_energy(new_energy)
+            new['Energy level'] = new_energy
             new['Collar'] = dd['collar']
             new['Notes/Scores last updated'] = last_updated
             new['Notes'] = new_notes
