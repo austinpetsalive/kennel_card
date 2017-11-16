@@ -203,13 +203,15 @@ class MMKL(object):
 
     def process(self):
 
-        def update_col(name, ws_col_name, orig_col_name):
+        def update_col(name, ws_col_name, orig_col_name, null=''):
             col = self.ws_dict[name][ws_col_name]
             if not col:
                 try:
                     col = self.archive_dict[name][ws_col_name]
                 except KeyError:
                     col = self.orig_dict[name][orig_col_name]
+            if not col:
+                return null
             return col
 
         all_rows = {}
