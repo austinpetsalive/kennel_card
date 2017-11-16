@@ -61,12 +61,14 @@ def format_kennel(loc):
 
 def format_energy(energy):
     d = {
-        'U': 'Unk',
+        'U': '',
         'L': 'Low',
         'M': 'Med',
         'H': 'High'
     }
-    return d.get(energy, '')
+    e = d.get(energy, '')
+    print(f'Setting up energy d[{energy}] = {e}')
+    return e
 
 def format_hw(attrs):
     for d in attrs:
@@ -236,7 +238,7 @@ class MMKL(object):
             new['Cat'] = new_cat
             new['Home'] = new_home
             new['Dog+Child'] = 0
-            new['Energy level'] = new_energy 
+            new['Energy level'] = format_energy(new_energy)
             new['Collar'] = dd['collar']
             new['Notes/Scores last updated'] = last_updated
             new['Notes'] = new_notes
