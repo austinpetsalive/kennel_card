@@ -288,7 +288,12 @@ class MMKL(object):
                 self.archive_dict[name] = self.ws_dict[name]
         if not self.archive_dict:
             return
-        df = pandas.DataFrame.from_dict(self.archive_dict, orient='index')
+        d = {}
+        for name, values in self.archive_dict.items():
+             if any([v for _, v in values.items()]):
+                 d[name] = values
+        import pdb; pdb.set_trace()
+        df = pandas.DataFrame.from_dict(d, orient='index')
         self.archive.set_dataframe(df, start=(1, 1))
 
 
