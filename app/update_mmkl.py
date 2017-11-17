@@ -118,10 +118,10 @@ def clear(ws):
 def fix_formulas(ws):
     rows = ws.jsonSheet['properties']['gridProperties']['rowCount']
     values = [
-        [f'=IF( IF($C{i}=0,3,$C{i}) + IF($D{i}=0,3,$D{i}) > 6, IF($C{i}=0,3,$C{i})+IF($D{i}=0,3,$D{i}), 0 )']
+        [f'=IF( IF($E{i}=0,3,$E{i}) + IF($F{i}=0,3,$F{i}) > 6, IF($E{i}=0,3,$E{i})+IF($F{i}=0,3,$F{i}), 0 )']
         for i in range(2, rows)
     ]
-    ws.update_cells('G2:G', values)
+    ws.update_cells('I2:I', values)
 
 def dd_info(web_id):
     print(f'Getting info for {web_id}')
@@ -198,7 +198,8 @@ class MMKL(object):
                 'dd_info': dd,
                 'web_id': dog['ID'],
                 'kennel': format_kennel(dog['CurrentLocation']),
-                'hw': format_hw(dog['Attributes'])
+                'hw': format_hw(dog['Attributes']),
+                'internal_id': dog['Internal-ID']
             }
 
     def process(self):
@@ -219,8 +220,8 @@ class MMKL(object):
             name = it['name']
             dd = it['dd_info']
             new = {}
-            new['Name'] = name
-
+            internal_id = it['internal_id']
+            new['Name'] = f'=HYPERLINK("https://www.shelterluv.com/memos_card/{internal_id}", "{name}")'
             new_notes = update_col(name, 'Notes', 'Matchmaker Notes')
             new_category = update_col(name, 'Category', '_Category')
             new_dog = update_col(name, 'Dog', 'Dog', null=0) 
@@ -235,6 +236,9 @@ class MMKL(object):
             if not new_energy:
                 new_energy = format_energy(dd['energy'])
 
+            web_id = it['web_id']
+            new['SL'] = f'=HYPERLINK("https://www.shelterluv.com/APA-A-{web_id}", "SL")'
+            new['DD'] = f'=HYPERLINK("http://www.dogdiaries.dreamhosters.com/?page_id=55&dog_id={web_id}", "DD")'
             new['Category'] = new_category
             new['Dog'] = new_dog
             new['Child'] = new_child
@@ -292,7 +296,6 @@ class MMKL(object):
         for name, values in self.archive_dict.items():
              if any([v for _, v in values.items()]):
                  d[name] = values
-        import pdb; pdb.set_trace()
         df = pandas.DataFrame.from_dict(d, orient='index')
         self.archive.set_dataframe(df, start=(1, 1))
 
