@@ -159,6 +159,23 @@ def dd_info(web_id):
 def update_dd(web_id, dog, cat, child, home, energy):
     print(f'Will update {web_id} with {dog}, {cat}, {child}, {home}, {energy}')
 
+def match(dd, dog, child, cat, home, energy):
+    def convert_score(score):
+        return int(score)
+    def convert_energy(energy):
+        if not energy:
+            return 'U'
+        return {
+            'Low': 'L',
+            'Med': 'M',
+            'High': 'H'
+        }[energy]
+    return all([dd['dog'] == convert_score(dog),
+                dd['cat'] == convert_score(cat),
+                dd['child'] == convert_score(child),
+                dd['home'] == convert_score(home),
+                dd['energy'] == convert_energy(energy)])
+
 class MMKL(object):
 
     def __init__(self, sl):
@@ -259,13 +276,12 @@ class MMKL(object):
             new['Gender'] = it['gender']
             new['PG'] = dd['pg']
             new['HW'] = it['hw']
+            #import pdb; pdb.set_trace()
             if self.ws_dict[name]['Scores match DD?'] == 'do update':
                 print(f'Update {name} with dog: {new_dog}')
                 update_dd(it['web_id'], new_dog, new_cat, new_child, new_home, new_energy)
                 new['Scores match DD?'] = 'up to date'
-            elif all([dd['dog'] == new_dog, dd['cat'] == new_cat,
-                      dd['child'] == new_child, dd['home'] == new_home,
-                      dd['energy'] == new_energy]):
+            elif match(dd, new_dog, new_cat, new_child, new_home, new_energy):
                 new['Scores match DD?'] = 'up to date'
             else:
                 new['Scores match DD?'] = 'mismatch'
@@ -309,6 +325,7 @@ if TESTING:
     source = functools.partial(limited_source(shelterluv.json_source))
 else:
     source = functools.partial(shelterluv.get_shelter_dogs, include_not_available=True)
+#    source = limited_source(source)
 
 def get_mmkl():
     mmkl = MMKL(shelterluv.Shelterluv(source))
