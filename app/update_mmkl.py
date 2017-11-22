@@ -294,6 +294,9 @@ class MMKL(object):
                 new['Scores match DD?'] = 'mismatch'
             new['Toy preference'] = toy 
             new['Has home notes (y/n)'] = home_notes 
+            new['Memo link'] = f"https://www.shelterluv.com/memos_card/{internal_id}"
+            new['SL link'] = f"https://www.shelterluv.com/APA-A-{web_id}"
+            new['DD link'] = f"http://www.dogdiaries.dreamhosters.com/?page_id=55&dog_id={web_id}"
             all_rows[name] = new
         return all_rows
 
