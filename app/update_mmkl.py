@@ -130,15 +130,22 @@ def dd_info(web_id):
         f'dog_id={web_id}')
     r.raise_for_status()
     page = BeautifulSoup(r.text, 'html5lib')
-    t = page.find(string='dog score')
-    l = [x.text.split('-')[0].strip() for x in t.parent.parent.next_sibling.select('td')[:5]]
-    beh_color = page.find(string='collar').parent.parent.next_sibling.select('td')[0].text.strip().lower()
+    try:
+        t = page.find(string='dog score')
+        l = [x.text.split('-')[0].strip() for x in t.parent.parent.next_sibling.select('td')[:5]]
+        beh_color = page.find(string='collar').parent.parent.next_sibling.select('td')[0].text.strip().lower()
+    except Exception:
+        beh_color = 'u'
+        l = ['U', 'U', 'U', 'U', 'U']
     try:
         weight = page.find(string='weight').parent.parent.next_sibling.select('td')[0].text.split()[0]
-    except IndexError:
+    except Exception:
         weight = ''
-    pg = page.find(string='pg/w/no').parent.parent.next_sibling.select('td')[2].text
-    if pg == 'W' or pg =='W*' or pg == 'no':
+    try:
+        pg = page.find(string='pg/w/no').parent.parent.next_sibling.select('td')[2].text
+        if pg == 'W' or pg =='W*' or pg == 'no':
+            pg = ''
+    except Exception:
         pg = ''
     def convert(x):
         if x == 'U':
