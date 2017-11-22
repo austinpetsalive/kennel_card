@@ -51,6 +51,14 @@ def get_shelter_dogs(include_not_available=False) -> Iterator[Animal]:
                 }
                 yield a
                 continue
+            cur_loc = a['CurrentLocation']
+            if cur_loc and cur_loc.get('Tier2') == 'Off Site':
+                a['CurrentLocation'] = {
+                    'Tier3': 'Off Site',
+                    'Tier4': ''
+                }
+                yield a
+                continue
             if ((include_not_available or a['Status'] == 'Available In Shelter')
                 and a.get('CurrentLocation')
                 and a['CurrentLocation'].get('Tier2') == 'TLAC'
