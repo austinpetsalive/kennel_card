@@ -297,12 +297,17 @@ class MMKL(object):
             new['Memo link'] = f"https://www.shelterluv.com/memos_card/{internal_id}"
             new['SL link'] = f"https://www.shelterluv.com/APA-A-{web_id}"
             new['DD link'] = f"http://www.dogdiaries.dreamhosters.com/?page_id=55&dog_id={web_id}"
+            print(f'Processing dog {name}')
             all_rows[name] = new
         return all_rows
 
-    def sync(self):
+    def sync(self, dry_run=True):
+        if not dry_run:
+            print('*** Warning: running full mode (not dry run)')
         all_rows = self.process()
         df = pandas.DataFrame.from_dict(all_rows, orient='index')
+        if dry_run:
+            return
         clear(self.ws)
         self.ws.set_dataframe(df, start=(1, 1))
         fix_formulas(self.ws)
