@@ -288,7 +288,7 @@ class MMKL(object):
                 print(f'Update {name} with dog: {new_dog}')
                 update_dd(it['web_id'], new_dog, new_cat, new_child, new_home, new_energy)
                 new['Scores match DD?'] = 'up to date'
-            elif match(dd, new_dog, new_cat, new_child, new_home, new_energy):
+            elif match(dd, new_dog, new_child, new_cat, new_home, new_energy):
                 new['Scores match DD?'] = 'up to date'
             else:
                 new['Scores match DD?'] = 'mismatch'
