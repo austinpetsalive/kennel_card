@@ -19,7 +19,6 @@ else:
     SHEET = '1huASrSqMFRqfSgVLpq06JJxxEIRDOMOR9T_R9Vx5vXU' # production
 GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS', 'secret.json')
 MM_PASSWORD = os.environ.get('MM_PASSWORD', '')
-CC_PASSWORD = os.environ.get('CC_PASSWORD', '')
 BEH_PASSWORD = os.environ.get('BEH_PASSWORD', '')
 
 def get_name(name: str) -> str:
@@ -163,20 +162,49 @@ def dd_info(web_id):
     }
     return resp
 
+def convert_score(score):
+    return int(score)
+
+def convert_energy(energy):
+    if not energy:
+        return 'U'
+    return {
+        'Low': 'L',
+        'Med': 'M',
+        'High': 'H'
+    }[energy]
+
 def update_dd(web_id, dog, cat, child, home, energy):
     print(f'Will update {web_id} with {dog}, {cat}, {child}, {home}, {energy}')
+    dog = convert_score(dog)
+    child = convert_score(child)
+    cat = convert_score(cat)
+    home = convert_score(home)
+    energy = convert_energy(energy)
+    cookies = {'password': BEH_PASSWORD,
+               'mm_password': MM_PASSWORD,
+               'first_name': 'Walter',
+               'last_name': 'Moreira',
+               'email': 'walter.moreira@austinpetsalive.org'
+    }
+    data = {
+        'select_home_score': home,
+        'select_dog_score': dog,
+        'select_kid_score': child,
+        'select_cat_score': cat,
+        'select_energy_level': energy,
+        'submit_update': 'Add Diary Entry'
+    }
+    resp = requests.post(
+        'http://www.dogdiaries.dreamhosters.com',
+        cookies=cookies,
+        params={'page_id': 55,
+                'dog_id': web_id},
+        data=data)
+    resp.raise_for_status()
+    return resp
 
 def match(dd, dog, child, cat, home, energy):
-    def convert_score(score):
-        return int(score)
-    def convert_energy(energy):
-        if not energy:
-            return 'U'
-        return {
-            'Low': 'L',
-            'Med': 'M',
-            'High': 'H'
-        }[energy]
     return all([dd['dog'] == convert_score(dog),
                 dd['cat'] == convert_score(cat),
                 dd['child'] == convert_score(child),
