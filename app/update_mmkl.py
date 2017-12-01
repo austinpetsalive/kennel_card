@@ -189,7 +189,7 @@ class MMKL(object):
         self.sl = sl
         self.client = pygsheets.authorize(service_file=GOOGLE_CREDENTIALS)
         self.sheet = self.client.open_by_key(SHEET)
-        #self.refresh()
+        self.refresh()
 
     def refresh(self):
         self.ws = self.sheet.worksheet_by_title('MMKL')
