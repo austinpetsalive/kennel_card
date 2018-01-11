@@ -4,7 +4,9 @@ import datetime
 import functools
 import itertools
 from collections import defaultdict
+import sendmail
 
+import textwrap
 import requests
 import shelterluv
 import pygsheets
@@ -311,7 +313,8 @@ class MMKL(object):
             new['Gender'] = it['gender']
             new['PG'] = dd['pg']
             new['HW'] = it['hw']
-            #import pdb; pdb.set_trace()
+#            if name == 'Omar':
+#                import pdb; pdb.set_trace()
             if self.ws_dict[name]['Scores match DD?'] == 'do update':
                 print(f'Update {name} with dog: {new_dog}')
                 update_dd(it['web_id'], new_dog, new_cat, new_child, new_home, new_energy)
@@ -374,4 +377,31 @@ def get_mmkl():
     mmkl = MMKL(shelterluv.Shelterluv(source))
     return mmkl
 
+def main():
+    try:
+        mmkl = get_mmkl()
+        mmkl.sync(dry_run=False)
+    except Exception:
+        notify(traceback.format_exc())
 
+def notify(what):
+    mailer = sendmail.mailer()
+#    to = ['matchmaker@austinpetsalive.org', 'walter@waltermoreira.net']
+    to = ['walter@waltermoreira.net']
+    msg = textwrap.dedent(
+        f"""
+        Beep, bop, boop, I'm a robot. Just to notify that I tried to refresh the MMKL and failed :-(
+        Here's the exception:
+
+        {what}
+        """
+    )
+    mailer.sendmail(
+        to=to,
+        msg=msg,
+        subject='MMKL refresh failed'
+    )
+    mailer.quit()
+
+if __name__ == '__main__':
+    main()
