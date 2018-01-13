@@ -241,6 +241,7 @@ class MMKL(object):
     def get_info(self):
         for name, dog in self.sl.by_name.items():
             dd = dd_info(dog['ID'])
+            sl_scores = self.sl.scores(dog['ID'])
             yield {
                 'name': name,
                 'breed': format_breed(dog['Breed']),
@@ -253,7 +254,8 @@ class MMKL(object):
                 'web_id': dog['ID'],
                 'kennel': format_kennel(dog['CurrentLocation']),
                 'hw': format_hw(dog['Attributes']),
-                'internal_id': dog['Internal-ID']
+                'internal_id': dog['Internal-ID'],
+                'sl_scores': sl_scores
             }
 
     def process(self):
@@ -273,22 +275,24 @@ class MMKL(object):
         for it in self.get_info():
             name = it['name']
             dd = it['dd_info']
+            sl_scores = it['sl_scores']
             new = {}
             internal_id = it['internal_id']
             new['Name'] = f'=HYPERLINK("https://www.shelterluv.com/memos_card/{internal_id}", "{name}")'
             new_notes = update_col(name, 'Notes', 'Matchmaker Notes')
             new_category = update_col(name, 'Category', '_Category')
-            new_dog = update_col(name, 'Dog', 'Dog', null=0) 
-            new_child = update_col(name, 'Child', 'Child', null=0)
-            new_cat = update_col(name, 'Cat', 'Cat', null=0)
-            new_home = update_col(name, 'Home', 'Home', null=0)
+            new_dog = sl_scores['Dog']
+            new_child = sl_scores['Child']
+            new_cat = sl_scores['Cat']
+            new_home = sl_scores['Home']
             toy = update_col(name, 'Toy preference', 'Toy Preference')
             home_notes = update_col(name, 'Has home notes (y/n)', 'Has Home Notes (Y/N)')
             last_updated = update_col(name, 'Notes/Scores last updated', 'Date Entered')
 
-            new_energy = self.ws_dict[name]['Energy level']
-            if not new_energy:
-                new_energy = format_energy(dd['energy'])
+#            new_energy = self.ws_dict[name]['Energy level']
+#            if not new_energy:
+#                new_energy = format_energy(dd['energy'])
+            new_energy = format_energy(sl_scores['Energy'][0])
 
             web_id = it['web_id']
             new['SL'] = f'=HYPERLINK("https://www.shelterluv.com/APA-A-{web_id}", "SL")'

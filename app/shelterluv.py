@@ -1,7 +1,9 @@
+import re
 import json
 import os
+import itertools
 from typing import (Iterator, Dict, List, Sequence, Any, Optional,
-                    Tuple, Callable, DefaultDict, Mapping)
+                    Tuple, Callable, DefaultDict, Mapping, Union)
 
 import requests
 
@@ -11,6 +13,7 @@ SHELTERLUV_KEY = os.environ['SHELTERLUV_KEY']
 
 Animal = Dict[str, Any]
 Events = Dict[str, Any]
+Scores = Dict[str, Union[str, int]]
 
 
 class APIError(Exception):
@@ -40,6 +43,12 @@ def get_from_shelterluv(
 
 def get_all_animals() -> Iterator[Animal]:
     return get_from_shelterluv('animals', 'animals')
+
+def get_all_dogs() -> Iterator[Animal]:
+    for a in get_all_animals():
+        if a['Type'] != 'Dog':
+            continue
+        yield a
 
 def get_shelter_dogs(include_not_available=False) -> Iterator[Animal]:
     for a in get_all_animals():
@@ -88,6 +97,17 @@ def json_source():
     with open('src.json') as f:
         yield from json.load(f)
 
+def get_location(dog: Animal) -> Tuple[str, str]:
+    d = dog.get('CurrentLocation', {}) or {}
+    return d.get('Tier3', 'Unknown'), d.get('Tier4', 'Unknown')
+
+def limited_source(
+        src: Callable[[], Iterator[Animal]],
+        limit: int = 3) -> Callable[[], Iterator[Animal]]:
+    def _f():
+        return itertools.islice(src(), limit)
+    return _f
+
 class Shelterluv(object):
 
     def __init__(self, source=None):
@@ -97,7 +117,32 @@ class Shelterluv(object):
     def refresh(self):
         full = list(self.source())
         self.by_name = {dog['Name']: dog for dog in full}
+
         self.by_location = {
-            (dog['CurrentLocation']['Tier3'], dog['CurrentLocation'].get('Tier4')): dog
+            get_location(dog): dog
             for dog in full
         }
+        self.by_apa_id = {
+            dog['ID']: dog for dog in full
+        }
+
+    def scores(self, apa_id: str) -> Scores:
+        dog = self.by_apa_id[apa_id]
+        attributes = dog.get('Attributes', []) or []
+        scores = {
+            'Dog': 0,
+            'Child': 0,
+            'Cat': 0,
+            'Home': 0,
+            'Energy': 'Unknown'
+        }
+        for attr in attributes:
+            m = re.match('SCORE - (\w+) \((\d) out of 5\)', attr['AttributeName'])
+            if m is not None:
+                category, score = m.groups()
+                scores[category] = int(score)
+            m = re.match('ENERGY - (\w+)', attr['AttributeName'])
+            if m is not None:
+                energy = m.group(1)
+                scores['Energy'] = energy
+        return scores
