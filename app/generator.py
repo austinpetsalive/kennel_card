@@ -192,7 +192,7 @@ class Cards(object):
         self.refresh()
 
     def refresh(self):
-        self.rows = [x[1:] for x in self.worksheet.all_values()]
+        self.rows = [x[1:] for x in self.worksheet.get_all_values()]
         self.by_name = dict((x, y) for x,*y in self.rows[1:])
 
     def get_row(self, idx):
