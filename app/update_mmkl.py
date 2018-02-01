@@ -280,6 +280,7 @@ class MMKL(object):
             internal_id = it['internal_id']
             new['Name'] = f'=HYPERLINK("https://www.shelterluv.com/memos_card/{internal_id}", "{name}")'
             new_notes = update_col(name, 'Notes', 'Matchmaker Notes')
+            new_intro = update_col(name, 'Intro Plan', '')
             new_category = update_col(name, 'Category', '_Category')
             new_dog = sl_scores['Dog']
             new_child = sl_scores['Child']
@@ -307,6 +308,7 @@ class MMKL(object):
             new['Collar'] = dd['collar']
             new['Notes/Scores last updated'] = last_updated
             new['Notes'] = new_notes
+            new['Intro Plan'] = new_intro
             new['Kennel'] = it['kennel']
             new['Days since last intake'] = it['days_since_last_intake']
             new['Total days at shelter'] = it['days_total']
