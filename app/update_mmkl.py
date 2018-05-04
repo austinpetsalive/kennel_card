@@ -11,6 +11,7 @@ import requests
 import shelterluv
 import pygsheets
 import pandas
+import pytz
 from bs4 import BeautifulSoup
 
 TESTING = False
@@ -349,6 +350,15 @@ class MMKL(object):
         self.ws.set_dataframe(df, start=(1, 1))
         fix_formulas(self.ws)
         self.archive_old(all_rows)
+        self.set_last_update()
+
+    def set_last_update(self):
+        a1 = self.ws.cell('A1')
+        cst = pytz.timezone('US/Central')
+        timestamp = datetime.datetime.now(cst).strftime('%m/%d/%Y %I:%M:%S %p')
+        a1.note = f'Last update:\n{timestamp}'
+        a1.set_text_alignment('MIDDLE', direction='Verical')
+        a1.set_text_alignment('CENTER', direction='Horizondal')
 
     def archive_old(self, rows):
         for name in self.ws_dict:
